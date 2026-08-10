@@ -7,14 +7,17 @@ import {
   generateId,
 } from '../lib/calculations'
 import type { PackagingType, ProductType } from '../types'
-import { Button, Card, Input, PageHeader, Select, EmptyState } from '../components/ui'
+import { Button, Card, Input, PageHeader, Select, EmptyState, FormError } from '../components/ui'
+
+type ProductCategory = 'mochi' | 'onigiri' | 'imported'
 
 export function ProductionPage() {
   const { data, updateData } = useApp()
   const [showForm, setShowForm] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     date: new Date().toISOString().slice(0, 10),
-    productCategory: 'mochi' as 'mochi' | 'imported',
+    productCategory: 'mochi' as ProductCategory,
     recipeId: '',
     importedProductId: '',
     quantity: '',
@@ -26,9 +29,17 @@ export function ProductionPage() {
     notes: '',
   })
 
+  const mochiRecipes = data.recipes.filter((r) => r.productType === 'mochi')
+  const onigiriRecipes = data.recipes.filter((r) => r.productType === 'onigiri')
+
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.quantity || !form.estimatedRetailPriceCAD) return
+    setError('')
+
+    if (!form.quantity || !form.estimatedRetailPriceCAD) {
+      setError('Please enter quantity and retail price.')
+      return
+    }
 
     let productName = ''
     let productType: ProductType = 'mochi'
@@ -36,16 +47,31 @@ export function ProductionPage() {
     let importedProductId: string | undefined
 
     if (form.productCategory === 'mochi') {
-      const recipe = data.recipes.find((r) => r.id === form.recipeId)
-      if (!recipe) return
+      const recipe = mochiRecipes.find((r) => r.id === form.recipeId)
+      if (!recipe) {
+        setError('Please select a mochi recipe.')
+        return
+      }
       productName = recipe.name
       productType = 'mochi'
       recipeId = recipe.id
+    } else if (form.productCategory === 'onigiri') {
+      const recipe = onigiriRecipes.find((r) => r.id === form.recipeId)
+      if (!recipe) {
+        setError('Please select an onigiri recipe.')
+        return
+      }
+      productName = recipe.name
+      productType = 'onigiri'
+      recipeId = recipe.id
     } else {
       const product = data.importedProducts.find((p) => p.id === form.importedProductId)
-      if (!product) return
+      if (!product) {
+        setError('Please select a rice cracker product.')
+        return
+      }
       productName = product.name
-      productType = product.productType
+      productType = 'rice_cracker'
       importedProductId = product.id
     }
 
@@ -89,13 +115,18 @@ export function ProductionPage() {
     }))
   }
 
-  const recipeOptions = data.recipes.map((r) => ({ value: r.id, label: r.name }))
+  const recipeOptions =
+    form.productCategory === 'mochi'
+      ? mochiRecipes.map((r) => ({ value: r.id, label: r.name }))
+      : onigiriRecipes.map((r) => ({ value: r.id, label: r.name }))
+
   const importedOptions = data.importedProducts.map((p) => ({
     value: p.id,
-    label: `${p.name} (${p.productType === 'onigiri' ? 'Onigiri' : 'Rice cracker'})`,
+    label: p.name,
   }))
 
   const sorted = [...data.production].sort((a, b) => b.date.localeCompare(a.date))
+  const isRecipeProduct = form.productCategory === 'mochi' || form.productCategory === 'onigiri'
 
   return (
     <div>
@@ -104,7 +135,7 @@ export function ProductionPage() {
         subtitle="Enter how many you made & estimated retail price"
       />
 
-      <Button onClick={() => setShowForm(!showForm)} className="w-full mb-4 flex items-center justify-center gap-2">
+      <Button onClick={() => { setShowForm(!showForm); setError('') }} className="w-full mb-4 flex items-center justify-center gap-2">
         <Plus size={18} />
         Log Production
       </Button>
@@ -112,22 +143,31 @@ export function ProductionPage() {
       {showForm && (
         <Card className="mb-4">
           <form onSubmit={handleAdd} className="space-y-3">
+            {error && <FormError message={error} />}
             <Input label="Date" value={form.date} onChange={(v) => setForm({ ...form, date: v })} type="date" />
 
             <Select
               label="Product type"
               value={form.productCategory}
-              onChange={(v) => setForm({ ...form, productCategory: v as 'mochi' | 'imported', recipeId: '', importedProductId: '' })}
+              onChange={(v) =>
+                setForm({
+                  ...form,
+                  productCategory: v as ProductCategory,
+                  recipeId: '',
+                  importedProductId: '',
+                })
+              }
               options={[
                 { value: 'mochi', label: 'Mochi (in-house)' },
-                { value: 'imported', label: 'Onigiri / Rice cracker' },
+                { value: 'onigiri', label: 'Onigiri (in-house)' },
+                { value: 'imported', label: 'Rice cracker (imported)' },
               ]}
             />
 
-            {form.productCategory === 'mochi' ? (
+            {isRecipeProduct ? (
               <>
                 <Select
-                  label="Recipe / flavor"
+                  label="Recipe"
                   value={form.recipeId}
                   onChange={(v) => setForm({ ...form, recipeId: v })}
                   options={[{ value: '', label: 'Select recipe...' }, ...recipeOptions]}
@@ -144,7 +184,7 @@ export function ProductionPage() {
               </>
             ) : (
               <Select
-                label="Product"
+                label="Rice cracker product"
                 value={form.importedProductId}
                 onChange={(v) => {
                   const product = data.importedProducts.find((p) => p.id === v)
@@ -163,7 +203,10 @@ export function ProductionPage() {
               value={form.quantity}
               onChange={(v) => setForm({ ...form, quantity: v })}
               type="number"
-              hint="Enter the number of mochi/units you produced"
+              step="any"
+              min="1"
+              inputMode="decimal"
+              hint="Number of mochi, onigiri, or units produced"
             />
 
             <Input
@@ -171,22 +214,25 @@ export function ProductionPage() {
               value={form.estimatedRetailPriceCAD}
               onChange={(v) => setForm({ ...form, estimatedRetailPriceCAD: v })}
               type="number"
+              step="any"
+              min="0"
+              inputMode="decimal"
             />
 
             <div className="border-t border-border pt-3">
               <div className="text-sm font-medium text-ink-muted mb-2">Batch costs (total for this run)</div>
-              <Input label="Labor (CAD)" value={form.laborCostCAD} onChange={(v) => setForm({ ...form, laborCostCAD: v })} type="number" placeholder="0" />
+              <Input label="Labor (CAD)" value={form.laborCostCAD} onChange={(v) => setForm({ ...form, laborCostCAD: v })} type="number" step="any" min="0" inputMode="decimal" placeholder="0" />
               <div className="h-2" />
-              <Input label="Utilities (CAD)" value={form.utilitiesCostCAD} onChange={(v) => setForm({ ...form, utilitiesCostCAD: v })} type="number" placeholder="0" />
+              <Input label="Utilities (CAD)" value={form.utilitiesCostCAD} onChange={(v) => setForm({ ...form, utilitiesCostCAD: v })} type="number" step="any" min="0" inputMode="decimal" placeholder="0" />
               <div className="h-2" />
-              <Input label="Marketing (CAD)" value={form.marketingCostCAD} onChange={(v) => setForm({ ...form, marketingCostCAD: v })} type="number" placeholder="0" />
+              <Input label="Marketing (CAD)" value={form.marketingCostCAD} onChange={(v) => setForm({ ...form, marketingCostCAD: v })} type="number" step="any" min="0" inputMode="decimal" placeholder="0" />
             </div>
 
             <Input label="Notes (optional)" value={form.notes} onChange={(v) => setForm({ ...form, notes: v })} />
 
             <div className="flex gap-2">
               <Button type="submit" className="flex-1">Save</Button>
-              <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button type="button" variant="ghost" onClick={() => { setShowForm(false); setError('') }}>Cancel</Button>
             </div>
           </form>
         </Card>
@@ -205,7 +251,7 @@ export function ProductionPage() {
                     <div className="font-medium">{entry.productName}</div>
                     <div className="text-xs text-ink-muted">
                       {entry.date} · {entry.quantity} units
-                      {entry.productType === 'mochi' && (
+                      {entry.productType !== 'rice_cracker' && (
                         <> · {entry.packagingType === 'individual' ? 'Individual' : 'Box of 4'}</>
                       )}
                     </div>

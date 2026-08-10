@@ -1,4 +1,5 @@
 import type {
+  AmountBasis,
   AppData,
   Currency,
   FixedAsset,
@@ -7,13 +8,20 @@ import type {
   ProductionEntry,
   ProfitEstimate,
   Recipe,
+  RecipeIngredient,
   SaleEntry,
   Supply,
+  Unit,
   UnitCostBreakdown,
 } from '../types'
 
 export function toCAD(amount: number, currency: Currency, jpyToCad: number): number {
   return currency === 'CAD' ? amount : amount * jpyToCad
+}
+
+export function formatUnit(unit: Unit): string {
+  if (unit === 'piece') return '個'
+  return unit
 }
 
 export function supplyUnitCost(supply: Supply, jpyToCad: number): number {
@@ -30,23 +38,28 @@ export function totalDepreciationPerUnit(assets: FixedAsset[], jpyToCad: number)
   return assets.reduce((sum, a) => sum + assetDepreciationPerUnit(a, jpyToCad), 0)
 }
 
+export function amountPerBatch(ingredient: RecipeIngredient, batchYield: number): number {
+  return ingredient.amountBasis === 'per_unit'
+    ? ingredient.amount * batchYield
+    : ingredient.amount
+}
+
 export function recipeIngredientCost(
-  ingredients: { supplyId: string; amount: number }[],
+  ingredients: RecipeIngredient[],
   supplies: Supply[],
+  batchYield: number,
   jpyToCad: number,
 ): number {
   return ingredients.reduce((sum, ing) => {
     const supply = supplies.find((s) => s.id === ing.supplyId)
     if (!supply) return sum
-    return sum + supplyUnitCost(supply, jpyToCad) * ing.amount
+    return sum + supplyUnitCost(supply, jpyToCad) * amountPerBatch(ing, batchYield)
   }, 0)
 }
 
 export function recipeBatchCost(recipe: Recipe, supplies: Supply[], jpyToCad: number): number {
-  const base = recipeIngredientCost(recipe.baseIngredients, supplies, jpyToCad)
-  const filling = recipe.fillingIngredient
-    ? recipeIngredientCost([recipe.fillingIngredient], supplies, jpyToCad)
-    : 0
+  const base = recipeIngredientCost(recipe.baseIngredients, supplies, recipe.batchYield, jpyToCad)
+  const filling = recipeIngredientCost(recipe.fillingIngredients, supplies, recipe.batchYield, jpyToCad)
   return base + filling
 }
 
@@ -104,7 +117,7 @@ export function calculateProductionCosts(
   let ingredients = 0
   let packaging = 0
 
-  if (entry.productType === 'mochi' && entry.recipeId) {
+  if ((entry.productType === 'mochi' || entry.productType === 'onigiri') && entry.recipeId) {
     const recipe = recipes.find((r) => r.id === entry.recipeId)
     if (recipe) {
       ingredients = recipeIngredientCostPerUnit(recipe, supplies, jpyToCad)
@@ -219,6 +232,11 @@ export function formatCurrency(amount: number, currency: Currency): string {
     minimumFractionDigits: currency === 'JPY' ? 0 : 2,
     maximumFractionDigits: currency === 'JPY' ? 0 : 2,
   }).format(amount)
+}
+
+export function formatAmountBasis(basis: AmountBasis, productType: 'mochi' | 'onigiri'): string {
+  if (basis === 'per_batch') return 'per batch'
+  return productType === 'mochi' ? 'per mochi' : 'per onigiri'
 }
 
 export function generateId(): string {

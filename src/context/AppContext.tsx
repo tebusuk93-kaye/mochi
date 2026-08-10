@@ -4,6 +4,7 @@ import { defaultData, loadData, saveData } from '../lib/storage'
 
 interface AppContextValue {
   data: AppData
+  hydrated: boolean
   updateData: (updater: (prev: AppData) => AppData) => void
   resetData: () => void
 }
@@ -12,14 +13,16 @@ const AppContext = createContext<AppContextValue | null>(null)
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData>(defaultData)
+  const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
     setData(loadData())
+    setHydrated(true)
   }, [])
 
   useEffect(() => {
-    saveData(data)
-  }, [data])
+    if (hydrated) saveData(data)
+  }, [data, hydrated])
 
   const updateData = (updater: (prev: AppData) => AppData) => {
     setData((prev) => updater(prev))
@@ -28,7 +31,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const resetData = () => setData({ ...defaultData })
 
   return (
-    <AppContext.Provider value={{ data, updateData, resetData }}>
+    <AppContext.Provider value={{ data, updateData, resetData, hydrated }}>
       {children}
     </AppContext.Provider>
   )

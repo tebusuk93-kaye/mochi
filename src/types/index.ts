@@ -3,6 +3,7 @@ export type Unit = 'g' | 'ml' | 'piece'
 export type ProductType = 'mochi' | 'onigiri' | 'rice_cracker'
 export type PackagingType = 'individual' | 'box_of_4'
 export type SupplyCategory = 'ingredient' | 'packaging_individual' | 'packaging_box' | 'packaging_inner'
+export type AmountBasis = 'per_batch' | 'per_unit'
 
 export interface Settings {
   jpyToCad: number
@@ -32,15 +33,16 @@ export interface FixedAsset {
 export interface RecipeIngredient {
   supplyId: string
   amount: number
+  amountBasis: AmountBasis
 }
 
 export interface Recipe {
   id: string
   name: string
-  productType: 'mochi'
+  productType: 'mochi' | 'onigiri'
   batchYield: number
   baseIngredients: RecipeIngredient[]
-  fillingIngredient?: RecipeIngredient
+  fillingIngredients: RecipeIngredient[]
   individualPackagingId?: string
   boxPackagingId?: string
   innerPackagingId?: string
@@ -50,7 +52,7 @@ export interface Recipe {
 export interface ImportedProduct {
   id: string
   name: string
-  productType: 'onigiri' | 'rice_cracker'
+  productType: 'rice_cracker'
   unitCost: number
   costCurrency: Currency
   estimatedRetailPriceCAD: number

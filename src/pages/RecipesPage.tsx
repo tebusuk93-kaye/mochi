@@ -8,47 +8,62 @@ import {
   importedUnitCost,
   recipeIngredientCostPerUnit,
 } from '../lib/calculations'
-import type { Recipe, RecipeIngredient, ImportedProduct, Currency } from '../types'
-import { Button, Card, Input, PageHeader, Select, EmptyState } from '../components/ui'
+import type { Recipe, Currency } from '../types'
+import { Button, Card, Input, PageHeader, Select, EmptyState, FormError } from '../components/ui'
+import {
+  IngredientRows,
+  emptyIngredientRow,
+  parseIngredientRows,
+  type IngredientFormRow,
+} from '../components/IngredientRows'
+
+type RecipeTab = 'mochi' | 'onigiri' | 'imported'
 
 export function RecipesPage() {
   const { data, updateData } = useApp()
-  const [tab, setTab] = useState<'mochi' | 'imported'>('mochi')
+  const [tab, setTab] = useState<RecipeTab>('mochi')
   const [showMochiForm, setShowMochiForm] = useState(false)
+  const [showOnigiriForm, setShowOnigiriForm] = useState(false)
   const [showImportedForm, setShowImportedForm] = useState(false)
 
   return (
     <div>
       <PageHeader
         title="Recipes & Products"
-        subtitle="Mochi batch recipes & imported items"
+        subtitle="Mochi & onigiri recipes, imported rice crackers"
       />
 
       <div className="flex gap-2 mb-4">
-        <Button
-          variant={tab === 'mochi' ? 'primary' : 'secondary'}
-          onClick={() => setTab('mochi')}
-          className="flex-1"
-        >
+        <Button variant={tab === 'mochi' ? 'primary' : 'secondary'} onClick={() => setTab('mochi')} className="flex-1">
           Mochi
         </Button>
-        <Button
-          variant={tab === 'imported' ? 'primary' : 'secondary'}
-          onClick={() => setTab('imported')}
-          className="flex-1"
-        >
+        <Button variant={tab === 'onigiri' ? 'primary' : 'secondary'} onClick={() => setTab('onigiri')} className="flex-1">
+          Onigiri
+        </Button>
+        <Button variant={tab === 'imported' ? 'primary' : 'secondary'} onClick={() => setTab('imported')} className="flex-1">
           Imported
         </Button>
       </div>
 
-      {tab === 'mochi' ? (
-        <MochiTab
+      {tab === 'mochi' && (
+        <RecipeTab
+          productType="mochi"
           showForm={showMochiForm}
           setShowForm={setShowMochiForm}
           data={data}
           updateData={updateData}
         />
-      ) : (
+      )}
+      {tab === 'onigiri' && (
+        <RecipeTab
+          productType="onigiri"
+          showForm={showOnigiriForm}
+          setShowForm={setShowOnigiriForm}
+          data={data}
+          updateData={updateData}
+        />
+      )}
+      {tab === 'imported' && (
         <ImportedTab
           showForm={showImportedForm}
           setShowForm={setShowImportedForm}
@@ -60,12 +75,14 @@ export function RecipesPage() {
   )
 }
 
-function MochiTab({
+function RecipeTab({
+  productType,
   showForm,
   setShowForm,
   data,
   updateData,
 }: {
+  productType: 'mochi' | 'onigiri'
   showForm: boolean
   setShowForm: (v: boolean) => void
   data: ReturnType<typeof useApp>['data']
@@ -75,45 +92,64 @@ function MochiTab({
   const individualPkgs = data.supplies.filter((s) => s.category === 'packaging_individual')
   const boxPkgs = data.supplies.filter((s) => s.category === 'packaging_box')
   const innerPkgs = data.supplies.filter((s) => s.category === 'packaging_inner')
+  const recipes = data.recipes.filter((r) => r.productType === productType)
 
+  const unitLabel = productType === 'mochi' ? 'mochi' : 'onigiri'
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: '',
     batchYield: '',
-    baseIngredients: [{ supplyId: '', amount: '' }] as { supplyId: string; amount: string }[],
-    fillingSupplyId: '',
-    fillingAmount: '',
+    baseIngredients: [emptyIngredientRow()] as IngredientFormRow[],
+    fillingIngredients: [] as IngredientFormRow[],
     individualPackagingId: '',
     boxPackagingId: '',
     innerPackagingId: '',
     notes: '',
   })
 
-  const addBaseIngredient = () => {
-    setForm({ ...form, baseIngredients: [...form.baseIngredients, { supplyId: '', amount: '' }] })
-  }
-
-  const removeBaseIngredient = (idx: number) => {
-    setForm({ ...form, baseIngredients: form.baseIngredients.filter((_, i) => i !== idx) })
+  const resetForm = () => {
+    setForm({
+      name: '',
+      batchYield: '',
+      baseIngredients: [emptyIngredientRow()],
+      fillingIngredients: [],
+      individualPackagingId: '',
+      boxPackagingId: '',
+      innerPackagingId: '',
+      notes: '',
+    })
+    setError('')
   }
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.name || !form.batchYield) return
+    setError('')
 
-    const baseIngredients: RecipeIngredient[] = form.baseIngredients
-      .filter((i) => i.supplyId && i.amount)
-      .map((i) => ({ supplyId: i.supplyId, amount: parseFloat(i.amount) }))
+    if (!form.name.trim()) {
+      setError('Please enter a recipe name.')
+      return
+    }
+    const batchYield = parseFloat(form.batchYield)
+    if (!form.batchYield || Number.isNaN(batchYield) || batchYield <= 0) {
+      setError(`Please enter how many ${unitLabel} one batch makes.`)
+      return
+    }
+
+    const baseIngredients = parseIngredientRows(form.baseIngredients)
+    const fillingIngredients = parseIngredientRows(form.fillingIngredients)
+
+    if (baseIngredients.length === 0 && fillingIngredients.length === 0) {
+      setError('Add at least one ingredient.')
+      return
+    }
 
     const recipe: Recipe = {
       id: generateId(),
-      name: form.name,
-      productType: 'mochi',
-      batchYield: parseFloat(form.batchYield),
+      name: form.name.trim(),
+      productType,
+      batchYield,
       baseIngredients,
-      fillingIngredient:
-        form.fillingSupplyId && form.fillingAmount
-          ? { supplyId: form.fillingSupplyId, amount: parseFloat(form.fillingAmount) }
-          : undefined,
+      fillingIngredients,
       individualPackagingId: form.individualPackagingId || undefined,
       boxPackagingId: form.boxPackagingId || undefined,
       innerPackagingId: form.innerPackagingId || undefined,
@@ -121,17 +157,7 @@ function MochiTab({
     }
 
     updateData((prev) => ({ ...prev, recipes: [...prev.recipes, recipe] }))
-    setForm({
-      name: '',
-      batchYield: '',
-      baseIngredients: [{ supplyId: '', amount: '' }],
-      fillingSupplyId: '',
-      fillingAmount: '',
-      individualPackagingId: '',
-      boxPackagingId: '',
-      innerPackagingId: '',
-      notes: '',
-    })
+    resetForm()
     setShowForm(false)
   }
 
@@ -139,86 +165,58 @@ function MochiTab({
     updateData((prev) => ({ ...prev, recipes: prev.recipes.filter((r) => r.id !== id) }))
   }
 
-  const supplyOptions = ingredients.map((s) => ({ value: s.id, label: s.name }))
   const pkgIndividualOpts = [{ value: '', label: 'None' }, ...individualPkgs.map((s) => ({ value: s.id, label: s.name }))]
   const pkgBoxOpts = [{ value: '', label: 'None' }, ...boxPkgs.map((s) => ({ value: s.id, label: s.name }))]
   const pkgInnerOpts = [{ value: '', label: 'None' }, ...innerPkgs.map((s) => ({ value: s.id, label: s.name }))]
 
   return (
     <>
-      <Button onClick={() => setShowForm(!showForm)} className="w-full mb-4 flex items-center justify-center gap-2">
+      <Button onClick={() => { setShowForm(!showForm); setError('') }} className="w-full mb-4 flex items-center justify-center gap-2">
         <Plus size={18} />
-        Add Mochi Recipe
+        Add {productType === 'mochi' ? 'Mochi' : 'Onigiri'} Recipe
       </Button>
 
       {showForm && (
         <Card className="mb-4">
-          <form onSubmit={handleAdd} className="space-y-3">
-            <Input label="Flavor name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="e.g. Red bean" />
+          <form onSubmit={handleAdd} className="space-y-4">
+            {error && <FormError message={error} />}
             <Input
-              label="Batch yield (mochi per batch)"
+              label="Recipe name"
+              value={form.name}
+              onChange={(v) => setForm({ ...form, name: v })}
+              placeholder={productType === 'mochi' ? 'e.g. Peach mochi' : 'e.g. Salmon onigiri'}
+            />
+            <Input
+              label={`Batch yield (${unitLabel} per batch)`}
               value={form.batchYield}
               onChange={(v) => setForm({ ...form, batchYield: v })}
               type="number"
-              hint="e.g. 200g flour + other ingredients makes 8 mochi → enter 8"
+              step="any"
+              min="1"
+              inputMode="decimal"
+              hint={`e.g. one batch makes 8 ${unitLabel}`}
             />
 
-            <div>
-              <div className="text-sm font-medium text-ink-muted mb-2">Base ingredients (per batch)</div>
-              {form.baseIngredients.map((ing, idx) => (
-                <div key={idx} className="flex gap-2 mb-2 items-end">
-                  <div className="flex-1">
-                    <Select
-                      label=""
-                      value={ing.supplyId}
-                      onChange={(v) => {
-                        const updated = [...form.baseIngredients]
-                        updated[idx] = { ...updated[idx], supplyId: v }
-                        setForm({ ...form, baseIngredients: updated })
-                      }}
-                      options={[{ value: '', label: 'Select...' }, ...supplyOptions]}
-                    />
-                  </div>
-                  <div className="w-24">
-                    <Input
-                      label=""
-                      value={ing.amount}
-                      onChange={(v) => {
-                        const updated = [...form.baseIngredients]
-                        updated[idx] = { ...updated[idx], amount: v }
-                        setForm({ ...form, baseIngredients: updated })
-                      }}
-                      type="number"
-                      placeholder="g"
-                    />
-                  </div>
-                  {form.baseIngredients.length > 1 && (
-                    <button type="button" onClick={() => removeBaseIngredient(idx)} className="text-sakura pb-2">
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                </div>
-              ))}
-              <Button type="button" variant="ghost" onClick={addBaseIngredient} className="text-xs">
-                + Add ingredient
-              </Button>
-            </div>
+            <IngredientRows
+              title="Base ingredients"
+              hint="Flour, rice, sugar, etc. — per batch or per unit"
+              rows={form.baseIngredients}
+              supplies={ingredients}
+              productType={productType}
+              onChange={(rows) => setForm({ ...form, baseIngredients: rows })}
+              defaultBasis="per_batch"
+            />
 
             <div className="border-t border-border pt-3">
-              <div className="text-sm font-medium text-ink-muted mb-2">Filling (per batch, optional)</div>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Select
-                    label=""
-                    value={form.fillingSupplyId}
-                    onChange={(v) => setForm({ ...form, fillingSupplyId: v })}
-                    options={[{ value: '', label: 'None' }, ...supplyOptions]}
-                  />
-                </div>
-                <div className="w-24">
-                  <Input label="" value={form.fillingAmount} onChange={(v) => setForm({ ...form, fillingAmount: v })} type="number" placeholder="g" />
-                </div>
-              </div>
+              <IngredientRows
+                title="Filling / topping (optional)"
+                hint="Fruits, bean paste, etc. Use 個 for whole pieces — e.g. 0.25 per mochi = ¼ peach"
+                rows={form.fillingIngredients.length > 0 ? form.fillingIngredients : [emptyIngredientRow()]}
+                supplies={ingredients}
+                productType={productType}
+                onChange={(rows) => setForm({ ...form, fillingIngredients: rows })}
+                defaultBasis="per_unit"
+              />
             </div>
 
             <div className="border-t border-border pt-3 space-y-2">
@@ -230,17 +228,17 @@ function MochiTab({
 
             <div className="flex gap-2">
               <Button type="submit" className="flex-1">Save Recipe</Button>
-              <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button type="button" variant="ghost" onClick={() => { setShowForm(false); resetForm() }}>Cancel</Button>
             </div>
           </form>
         </Card>
       )}
 
-      {data.recipes.length === 0 && !showForm ? (
-        <EmptyState message="Define a mochi recipe with batch yield. Example: 200g flour + 50g sugar + filling → 8 mochi." />
+      {recipes.length === 0 && !showForm ? (
+        <EmptyState message={`Define a ${productType} recipe with batch yield and ingredients.`} />
       ) : (
         <div className="space-y-2">
-          {data.recipes.map((r) => {
+          {recipes.map((r) => {
             const costPerUnit = recipeIngredientCostPerUnit(r, data.supplies, data.settings.jpyToCad)
             return (
               <Card key={r.id}>
@@ -248,10 +246,10 @@ function MochiTab({
                   <div>
                     <div className="font-medium">{r.name}</div>
                     <div className="text-xs text-ink-muted">
-                      Batch makes {r.batchYield} mochi · {r.baseIngredients.length} base + {r.fillingIngredient ? 'filling' : 'no filling'}
+                      Batch makes {r.batchYield} · {r.baseIngredients.length} base + {r.fillingIngredients.length} filling
                     </div>
                     <div className="text-xs text-matcha-dark mt-0.5">
-                      Ingredient cost: {formatCAD(costPerUnit)}/mochi
+                      Ingredient cost: {formatCAD(costPerUnit)}/{unitLabel}
                     </div>
                   </div>
                   <button onClick={() => handleDelete(r.id)} className="text-sakura p-1">
@@ -278,9 +276,9 @@ function ImportedTab({
   data: ReturnType<typeof useApp>['data']
   updateData: ReturnType<typeof useApp>['updateData']
 }) {
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: '',
-    productType: 'onigiri' as 'onigiri' | 'rice_cracker',
     unitCost: '',
     costCurrency: 'JPY' as Currency,
     estimatedRetailPriceCAD: '',
@@ -289,20 +287,35 @@ function ImportedTab({
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.name || !form.unitCost || !form.estimatedRetailPriceCAD) return
+    setError('')
 
-    const product: ImportedProduct = {
+    if (!form.name.trim()) {
+      setError('Please enter a product name.')
+      return
+    }
+    const unitCost = parseFloat(form.unitCost)
+    const retail = parseFloat(form.estimatedRetailPriceCAD)
+    if (!form.unitCost || Number.isNaN(unitCost)) {
+      setError('Please enter import cost per unit.')
+      return
+    }
+    if (!form.estimatedRetailPriceCAD || Number.isNaN(retail)) {
+      setError('Please enter estimated retail price.')
+      return
+    }
+
+    const product = {
       id: generateId(),
-      name: form.name,
-      productType: form.productType,
-      unitCost: parseFloat(form.unitCost),
+      name: form.name.trim(),
+      productType: 'rice_cracker' as const,
+      unitCost,
       costCurrency: form.costCurrency,
-      estimatedRetailPriceCAD: parseFloat(form.estimatedRetailPriceCAD),
+      estimatedRetailPriceCAD: retail,
       notes: form.notes || undefined,
     }
 
     updateData((prev) => ({ ...prev, importedProducts: [...prev.importedProducts, product] }))
-    setForm({ name: '', productType: 'onigiri', unitCost: '', costCurrency: 'JPY', estimatedRetailPriceCAD: '', notes: '' })
+    setForm({ name: '', unitCost: '', costCurrency: 'JPY', estimatedRetailPriceCAD: '', notes: '' })
     setShowForm(false)
   }
 
@@ -315,26 +328,18 @@ function ImportedTab({
 
   return (
     <>
-      <Button onClick={() => setShowForm(!showForm)} className="w-full mb-4 flex items-center justify-center gap-2">
+      <Button onClick={() => { setShowForm(!showForm); setError('') }} className="w-full mb-4 flex items-center justify-center gap-2">
         <Plus size={18} />
-        Add Imported Product
+        Add Rice Cracker
       </Button>
 
       {showForm && (
         <Card className="mb-4">
           <form onSubmit={handleAdd} className="space-y-3">
-            <Input label="Product name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="e.g. Salmon onigiri" />
-            <Select
-              label="Type"
-              value={form.productType}
-              onChange={(v) => setForm({ ...form, productType: v as 'onigiri' | 'rice_cracker' })}
-              options={[
-                { value: 'onigiri', label: 'Onigiri' },
-                { value: 'rice_cracker', label: 'Rice cracker' },
-              ]}
-            />
+            {error && <FormError message={error} />}
+            <Input label="Product name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="e.g. Senbei assortment" />
             <div className="grid grid-cols-2 gap-2">
-              <Input label="Import cost per unit" value={form.unitCost} onChange={(v) => setForm({ ...form, unitCost: v })} type="number" />
+              <Input label="Import cost per unit" value={form.unitCost} onChange={(v) => setForm({ ...form, unitCost: v })} type="number" step="any" min="0" inputMode="decimal" />
               <Select
                 label="Cost currency"
                 value={form.costCurrency}
@@ -350,17 +355,20 @@ function ImportedTab({
               value={form.estimatedRetailPriceCAD}
               onChange={(v) => setForm({ ...form, estimatedRetailPriceCAD: v })}
               type="number"
+              step="any"
+              min="0"
+              inputMode="decimal"
             />
             <div className="flex gap-2">
               <Button type="submit" className="flex-1">Save</Button>
-              <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button type="button" variant="ghost" onClick={() => { setShowForm(false); setError('') }}>Cancel</Button>
             </div>
           </form>
         </Card>
       )}
 
       {data.importedProducts.length === 0 && !showForm ? (
-        <EmptyState message="Add onigiri or rice crackers you import from Japan." />
+        <EmptyState message="Add rice crackers you import from Japan. Onigiri is made in-house — use the Onigiri tab." />
       ) : (
         <div className="space-y-2">
           {data.importedProducts.map((p) => {
@@ -372,7 +380,7 @@ function ImportedTab({
                   <div>
                     <div className="font-medium">{p.name}</div>
                     <div className="text-xs text-ink-muted">
-                      {p.productType === 'onigiri' ? 'Onigiri' : 'Rice cracker'} · Cost: {formatCurrency(p.unitCost, p.costCurrency)} ({formatCAD(costCAD)})
+                      Rice cracker · Cost: {formatCurrency(p.unitCost, p.costCurrency)} ({formatCAD(costCAD)})
                     </div>
                     <div className="text-xs text-matcha-dark mt-0.5">
                       Retail {formatCAD(p.estimatedRetailPriceCAD)} · Margin {formatCAD(margin)}

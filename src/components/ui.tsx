@@ -60,17 +60,33 @@ interface InputProps {
   type?: string
   placeholder?: string
   hint?: string
+  step?: string
+  min?: string
+  inputMode?: 'decimal' | 'numeric' | 'text'
 }
 
-export function Input({ label, value, onChange, type = 'text', placeholder, hint }: InputProps) {
+export function Input({
+  label,
+  value,
+  onChange,
+  type = 'text',
+  placeholder,
+  hint,
+  step,
+  min,
+  inputMode,
+}: InputProps) {
   return (
     <label className="block space-y-1">
-      <span className="text-sm font-medium text-ink-muted">{label}</span>
+      {label && <span className="text-sm font-medium text-ink-muted">{label}</span>}
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        step={step}
+        min={min}
+        inputMode={inputMode}
         className="w-full px-3 py-2.5 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-matcha/40"
       />
       {hint && <span className="text-xs text-ink-muted">{hint}</span>}
@@ -116,6 +132,14 @@ export function PageHeader({ title, subtitle }: { title: string; subtitle?: stri
 export function EmptyState({ message }: { message: string }) {
   return (
     <div className="text-center py-8 text-ink-muted text-sm">{message}</div>
+  )
+}
+
+export function FormError({ message }: { message: string }) {
+  return (
+    <div className="text-sm text-sakura-dark bg-sakura/10 border border-sakura/30 rounded-xl px-3 py-2">
+      {message}
+    </div>
   )
 }
 

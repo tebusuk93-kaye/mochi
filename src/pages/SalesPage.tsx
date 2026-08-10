@@ -10,7 +10,7 @@ export function SalesPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     date: new Date().toISOString().slice(0, 10),
-    productSource: 'mochi' as 'mochi' | 'imported' | 'custom',
+    productSource: 'mochi' as 'mochi' | 'onigiri' | 'imported' | 'custom',
     recipeId: '',
     importedProductId: '',
     customName: '',
@@ -29,10 +29,15 @@ export function SalesPage() {
     let productType: ProductType = 'mochi'
 
     if (form.productSource === 'mochi' && form.recipeId) {
-      const recipe = data.recipes.find((r) => r.id === form.recipeId)
+      const recipe = data.recipes.find((r) => r.id === form.recipeId && r.productType === 'mochi')
       if (!recipe) return
       productName = recipe.name
       productType = 'mochi'
+    } else if (form.productSource === 'onigiri' && form.recipeId) {
+      const recipe = data.recipes.find((r) => r.id === form.recipeId && r.productType === 'onigiri')
+      if (!recipe) return
+      productName = recipe.name
+      productType = 'onigiri'
     } else if (form.productSource === 'imported' && form.importedProductId) {
       const product = data.importedProducts.find((p) => p.id === form.importedProductId)
       if (!product) return
@@ -127,7 +132,8 @@ export function SalesPage() {
               onChange={(v) => setForm({ ...form, productSource: v as typeof form.productSource })}
               options={[
                 { value: 'mochi', label: 'Mochi recipe' },
-                { value: 'imported', label: 'Imported product' },
+                { value: 'onigiri', label: 'Onigiri recipe' },
+                { value: 'imported', label: 'Rice cracker (imported)' },
                 { value: 'custom', label: 'Custom name' },
               ]}
             />
@@ -137,7 +143,16 @@ export function SalesPage() {
                 label="Mochi flavor"
                 value={form.recipeId}
                 onChange={(v) => setForm({ ...form, recipeId: v })}
-                options={[{ value: '', label: 'Select...' }, ...data.recipes.map((r) => ({ value: r.id, label: r.name }))]}
+                options={[{ value: '', label: 'Select...' }, ...data.recipes.filter((r) => r.productType === 'mochi').map((r) => ({ value: r.id, label: r.name }))]}
+              />
+            )}
+
+            {form.productSource === 'onigiri' && (
+              <Select
+                label="Onigiri recipe"
+                value={form.recipeId}
+                onChange={(v) => setForm({ ...form, recipeId: v })}
+                options={[{ value: '', label: 'Select...' }, ...data.recipes.filter((r) => r.productType === 'onigiri').map((r) => ({ value: r.id, label: r.name }))]}
               />
             )}
 
