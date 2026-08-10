@@ -27,8 +27,17 @@ jobs:
 
       - run: touch dist/.nojekyll
 
-      - name: Deploy built app to gh-pages branch
+      - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+          publish_branch: gh-pages
+
+      - name: Deploy to Pages source branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: cursor/mochi-production-dashboard-dd3b
+          force_orphan: true
