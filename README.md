@@ -14,9 +14,15 @@ A mobile-friendly web dashboard for managing mochi production, costs, and profit
 
 ## Live Demo
 
-After merging to `main` and enabling GitHub Pages (Settings → Pages → Source: **GitHub Actions**), the app will be available at:
-
 **https://tebusuk93-kaye.github.io/mochi/**
+
+The app auto-deploys to GitHub Pages on every push to `main`.
+
+If you see a blank page, go to repo **Settings → Pages** and set:
+- **Source:** Deploy from a branch
+- **Branch:** `gh-pages` / `/ (root)`
+
+Then wait ~1 minute and refresh.
 
 ## Quick Start (local)
 
