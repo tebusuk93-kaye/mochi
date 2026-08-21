@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Toronto Beauty — Salon Owner Pitch Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #faf9f7;
+      --bg-alt: #f0eeea;
+      --surface: #ffffff;
+      --text: #1a1a1a;
+      --text-muted: #5c5c5c;
+      --text-light: #8a8a8a;
+      --accent: #2d4a3e;
+      --accent-soft: #e8efeb;
+      --accent-warm: #c4a882;
+      --border: #e5e2dc;
+      --shadow: 0 24px 64px rgba(26, 26, 26, 0.08);
+      --radius: 16px;
+      --slide-padding: clamp(2rem, 5vw, 4.5rem);
+      --font-sans: "DM Sans", system-ui, sans-serif;
+      --font-serif: "Instrument Serif", Georgia, serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .deck {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      padding: var(--slide-padding);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(40px);
+      transition: opacity 0.45s ease, transform 0.45s ease, visibility 0.45s;
+      overflow-y: auto;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+    }
+
+    .slide-inner {
+      flex: 1;
+      display: grid;
+      gap: clamp(1.5rem, 3vw, 2.5rem);
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .slide-header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .slide-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .headline {
+      font-family: var(--font-serif);
+      font-size: clamp(1.75rem, 4.5vw, 3rem);
+      font-weight: 400;
+      line-height: 1.15;
+      color: var(--text);
+      max-width: 18ch;
+    }
+
+    .headline em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .bullets li {
+      position: relative;
+      padding-left: 1.35rem;
+      font-size: clamp(0.95rem, 1.8vw, 1.125rem);
+      line-height: 1.55;
+      color: var(--text-muted);
+    }
+
+    .bullets li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.55em;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-warm);
+    }
+
+    .bullets strong { color: var(--text); font-weight: 600; }
+
+    /* Cover slide */
+    .slide-cover {
+      background: linear-gradient(135deg, #faf9f7 0%, #f0eeea 100%);
+      justify-content: center;
+      text-align: center;
+    }
+
+    .slide-cover .slide-inner {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .brand-mark {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .cover-title {
+      font-family: var(--font-serif);
+      font-size: clamp(2.5rem, 7vw, 4.5rem);
+      font-weight: 400;
+      line-height: 1.1;
+      margin-bottom: 1.25rem;
+    }
+
+    .cover-sub {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      color: var(--text-muted);
+      max-width: 36ch;
+      line-height: 1.5;
+    }
+
+    .cover-tagline {
+      margin-top: 2rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      box-shadow: var(--shadow);
+    }
+
+    /* Two-column layouts */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(1.5rem, 4vw, 3rem);
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    /* Visual panels */
+    .visual {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: clamp(1.25rem, 3vw, 2rem);
+      box-shadow: var(--shadow);
+    }
+
+    .visual-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin-bottom: 1rem;
+    }
+
+    /* Scattered channels diagram */
+    .channels-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+
+    .channel-chip {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem 0.5rem;
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .problem-callout {
+      margin-top: 1.25rem;
+      padding: 1rem;
+      background: var(--accent-soft);
+      border-radius: 10px;
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-style: italic;
+      text-align: center;
+    }
+
+    /* Search filters mockup */
+    .search-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .filter-tag {
+      padding: 0.4rem 0.75rem;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .filter-tag.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    /* Flow diagram */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .flow-step {
+      width: 100%;
+      padding: 1rem 1.25rem;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .flow-step.highlight {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .flow-step.final {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .flow-arrow {
+      font-size: 1.25rem;
+      color: var(--text-light);
+      padding: 0.35rem 0;
+    }
+
+    /* Profile mockup */
+    .phone-mockup {
+      max-width: 280px;
+      margin: 0 auto;
+      background: #111;
+      border-radius: 28px;
+      padding: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .phone-screen {
+      background: var(--bg);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .phone-hero {
+      height: 120px;
+      background: linear-gradient(135deg, #d4c4b0 0%, #a89580 100%);
+      position: relative;
+    }
+
+    .phone-body { padding: 1rem; }
+
+    .phone-name {
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .phone-location {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      margin-bottom: 0.75rem;
+    }
+
+    .phone-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .phone-tag {
+      font-size: 0.65rem;
+      padding: 0.25rem 0.5rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+    }
+
+    .phone-service {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .phone-cta {
+      margin-top: 0.75rem;
+      width: 100%;
+      padding: 0.65rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* Booking tools row */
+    .tools-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-top: 1.25rem;
+    }
+
+    .tool-badge {
+      padding: 0.6rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .check-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .check-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.05rem;
+      font-weight: 500;
+    }
+
+    .check-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    /* Analytics dashboard */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+
+    .stat-card {
+      background: var(--bg-alt);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-light);
+      margin-top: 0.35rem;
+      line-height: 1.3;
+    }
+
+    .example-note {
+      margin-top: 1rem;
+      font-size: 0.75rem;
+      font-style: italic;
+      color: var(--text-light);
+      text-align: center;
+    }
+
+    /* Pricing slide */
+    .price-hero {
+      text-align: center;
+      padding: clamp(2rem, 5vw, 3.5rem);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .price-amount {
+      font-family: var(--font-serif);
+      font-size: clamp(3rem, 8vw, 5rem);
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .price-period {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    .price-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-top: 1.75rem;
+    }
+
+    .price-badge {
+      padding: 0.6rem 1.25rem;
+      background: var(--accent);
+      color: white;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .includes-list {
+      margin-top: 1.5rem;
+      text-align: left;
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Why join grid */
+    .benefit-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      .benefit-grid { grid-template-columns: 1fr; }
+    }
+
+    .benefit-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+    }
+
+    .benefit-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .benefit-card p {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+
+    /* CTA slide */
+    .slide-cta {
+      background: linear-gradient(160deg, var(--accent) 0%, #1e3329 100%);
+      color: white;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .slide-cta .headline {
+      color: white;
+      max-width: none;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+    }
+
+    .slide-cta .bullets li { color: rgba(255,255,255,0.85); }
+    .slide-cta .bullets li::before { background: var(--accent-warm); }
+
+    .cta-button {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 1rem 2.5rem;
+      background: white;
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+
+    .cta-steps {
+      margin-top: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .cta-step {
+      padding: 0.75rem 1.25rem;
+      background: rgba(255,255,255,0.12);
+      border-radius: 10px;
+      font-size: 0.9rem;
+    }
+
+    /* Navigation */
+    .nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem clamp(1rem, 4vw, 2.5rem);
+      background: rgba(250, 249, 247, 0.92);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+      z-index: 100;
+    }
+
+    .slide-cta ~ .nav-bar,
+    .deck:has(.slide-cta.active) .nav-bar {
+      background: rgba(30, 51, 41, 0.92);
+      border-top-color: rgba(255,255,255,0.1);
+    }
+
+    .deck:has(.slide-cta.active) .nav-bar .nav-btn,
+    .deck:has(.slide-cta.active) .nav-bar .slide-counter,
+    .deck:has(.slide-cta.active) .nav-bar .progress-text {
+      color: rgba(255,255,255,0.9);
+    }
+
+    .deck:has(.slide-cta.active) .nav-bar .nav-btn {
+      border-color: rgba(255,255,255,0.25);
+    }
+
+    .nav-btn {
+      padding: 0.6rem 1.25rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg-alt);
+      border-color: var(--accent);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .progress-wrap {
+      flex: 1;
+      max-width: 280px;
+      margin: 0 1rem;
+    }
+
+    .progress-text {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      text-align: center;
+      margin-bottom: 0.4rem;
+    }
+
+    .progress-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 999px;
+      transition: width 0.35s ease;
+    }
+
+    /* Speaker notes toggle */
+    .notes-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 101;
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    .speaker-notes {
+      position: fixed;
+      bottom: 72px;
+      left: 1rem;
+      right: 1rem;
+      max-height: 30vh;
+      overflow-y: auto;
+      padding: 1rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+      z-index: 99;
+      display: none;
+    }
+
+    .speaker-notes.visible { display: block; }
+
+    .speaker-notes strong {
+      display: block;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    @media print {
+      .nav-bar, .notes-toggle, .speaker-notes { display: none !important; }
+      .slide {
+        position: relative;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+        page-break-after: always;
+        height: auto;
+        min-height: 100vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck" id="deck">
+
+    <!-- Slide 1 — Cover -->
+    <section class="slide slide-cover active" data-slide="1">
+      <div class="slide-inner">
+        <div class="brand-mark">Toronto Beauty</div>
+        <h1 class="cover-title">Get discovered by more Toronto beauty clients.</h1>
+        <p class="cover-sub">Toronto's beauty discovery marketplace — another way for clients to find your salon, not another booking system.</p>
+        <div class="cover-tagline">Salon Owner Pitch Deck</div>
+      </div>
+    </section>
+
+    <!-- Slide 2 — The Problem -->
+    <section class="slide" data-slide="2">
+      <div class="slide-inner two-col">
+        <div>
+          <div class="slide-header">
+            <span class="slide-label">Slide 2 — The Problem</span>
+            <h2 class="headline">Great salons get missed when clients can't search the way they actually look.</h2>
+          </div>
+          <ul class="bullets">
+            <li>Clients search across Google, Instagram, TikTok, Maps, salon websites, and booking platforms</li>
+            <li>Your best services are hard to compare side by side</li>
+            <li>Strong specialties don't always show up for the right search</li>
+            <li><strong>Result:</strong> the right client may never find the right salon</li>
+          </ul>
+        </div>
+        <div class="visual">
+          <div class="visual-label">Where clients look today</div>
+          <div class="channels-grid">
+            <div class="channel-chip">Google</div>
+            <div class="channel-chip">Instagram</div>
+            <div class="channel-chip">TikTok</div>
+            <div class="channel-chip">Google Maps</div>
+            <div class="channel-chip">Salon websites</div>
+            <div class="channel-chip">Booking apps</div>
+          </div>
+          <div class="problem-callout">"Korean perm specialist in North York" — hard to find across scattered channels</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 3 — The Opportunity -->
+    <section class="slide" data-slide="3">
+      <div class="slide-inner two-col">
+        <div>
+          <div class="slide-header">
+            <span class="slide-label">Slide 3 — The Opportunity</span>
+            <h2 class="headline">Clients don't just search for salons — they search for what they want <em>done</em>.</h2>
+          </div>
+          <ul class="bullets">
+            <li><strong>Service</strong> — balayage, lash lift, gel nails</li>
+            <li><strong>Specialty</strong> — Korean hair, textured hair, bridal beauty</li>
+            <li><strong>Language</strong> — Korean, Japanese, Mandarin, Cantonese</li>
+            <li><strong>Location</strong>, <strong>price</strong>, and <strong>current offers</strong></li>
+            <li>Toronto needs beauty-specific discovery — not just another listing</li>
+          </ul>
+        </div>
+        <div class="visual">
+          <div class="visual-label">How clients want to search</div>
+          <div class="search-bar">
+            <span class="filter-tag active">Service</span>
+            <span class="filter-tag active">Specialty</span>
+            <span class="filter-tag active">Language</span>
+            <span class="filter-tag">Location</span>
+            <span class="filter-tag">Price</span>
+            <span class="filter-tag">Offer</span>
+          </div>
+          <div class="phone-mockup">
+            <div class="phone-screen">
+              <div class="phone-hero"></div>
+              <div class="phone-body">
+                <div class="phone-name">Search results</div>
+                <div class="phone-location">Filtered by specialty & language</div>
+                <div class="phone-tags">
+                  <span class="phone-tag">Korean Perm</span>
+                  <span class="phone-tag">Curly Hair</span>
+                  <span class="phone-tag">한국어</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 4 — What Toronto Beauty Does -->
+    <section class="slide" data-slide="4">
+      <div class="slide-inner two-col">
+        <div>
+          <div class="slide-header">
+            <span class="slide-label">Slide 4 — What Toronto Beauty Does</span>
+            <h2 class="headline">We send ready-to-book clients to your salon — then straight to your existing booking page.</h2>
+          </div>
+          <ul class="bullets">
+            <li>Toronto's beauty discovery marketplace — think <strong>"Hot Pepper Beauty for Toronto"</strong></li>
+            <li>We are <strong>not</strong> a booking system</li>
+            <li>Clients click <strong>Book Now</strong> and land on your existing page</li>
+            <li>Fresha, Square, Booksy, GlossGenius, or your website — unchanged</li>
+          </ul>
+        </div>
+        <div class="visual">
+          <div class="visual-label">How it works</div>
+          <div class="flow">
+            <div class="flow-step">Client Search</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step highlight">Toronto Beauty</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step">Your Salon Profile</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step final">Your Existing Booking Page</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 5 — How Your Salon Appears -->
+    <section class="slide" data-slide="5">
+      <div class="slide-inner two-col">
+        <div>
+          <div class="slide-header">
+            <span class="slide-label">Slide 5 — How Your Salon Appears</span>
+            <h2 class="headline">Show clients exactly what you do best — before they ever reach your booking page.</h2>
+          </div>
+          <ul class="bullets">
+            <li>Photos, services & prices, specialties, languages, offers</li>
+            <li>Website, Instagram, and your booking URL</li>
+            <li>Tags like Korean Hair, Nail Art, Lash Lift, Bridal Beauty</li>
+            <li>One clear <strong>Book Now</strong> button → your booking page</li>
+          </ul>
+        </div>
+        <div class="visual">
+          <div class="visual-label">Salon profile mockup</div>
+          <div class="phone-mockup">
+            <div class="phone-screen">
+              <div class="phone-hero"></div>
+              <div class="phone-body">
+                <div class="phone-name">Studio Bloom</div>
+                <div class="phone-location">Kensington Market · Toronto</div>
+                <div class="phone-tags">
+                  <span class="phone-tag">Korean Perm</span>
+                  <span class="phone-tag">Japanese Gel</span>
+                  <span class="phone-tag">한국어 · 日本語</span>
+                </div>
+                <div class="phone-service"><span>Korean Perm</span><span>from $120</span></div>
+                <div class="phone-service"><span>Lash Lift</span><span>$65</span></div>
+                <button class="phone-cta" type="button">Book Now</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 6 — Zero Booking Disruption -->
+    <section class="slide" data-slide="6">
+      <div class="slide-inner">
+        <div class="slide-header">
+          <span class="slide-label">Slide 6 — Zero Booking Disruption</span>
+          <h2 class="headline">Keep the booking system you already use.</h2>
+        </div>
+        <div class="two-col" style="margin-top: 1rem;">
+          <ul class="check-list">
+            <li><span class="check-icon">✓</span> Fresha stays</li>
+            <li><span class="check-icon">✓</span> Square stays</li>
+            <li><span class="check-icon">✓</span> Booksy stays</li>
+            <li><span class="check-icon">✓</span> Your salon website stays</li>
+          </ul>
+          <ul class="bullets">
+            <li>No switch. No retraining. No double booking workflow</li>
+            <li>Toronto Beauty only drives discovery — you handle bookings where you always have</li>
+            <li><strong>No commission</strong> · <strong>No booking fee</strong></li>
+            <li>Your client relationship stays with you</li>
+          </ul>
+        </div>
+        <div class="tools-row">
+          <span class="tool-badge">Fresha</span>
+          <span class="tool-badge">Square</span>
+          <span class="tool-badge">Booksy</span>
+          <span class="tool-badge">GlossGenius</span>
+          <span class="tool-badge">Your website</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 7 — Analytics -->
+    <section class="slide" data-slide="7">
+      <div class="slide-inner two-col">
+        <div>
+          <div class="slide-header">
+            <span class="slide-label">Slide 7 — See What Toronto Beauty Sends You</span>
+            <h2 class="headline">See how many Toronto clients viewed your salon — and clicked through to book.</h2>
+          </div>
+          <ul class="bullets">
+            <li>Track profile views, service views, offer views</li>
+            <li>See <strong>Booking Clicks</strong> and <strong>Unique Booking Clickers</strong></li>
+            <li>We measure discovery and click-through — not completed bookings on our platform</li>
+            <li>Know what Toronto Beauty is sending your way</li>
+          </ul>
+        </div>
+        <div class="visual">
+          <div class="visual-label">Salon dashboard</div>
+          <div class="stats-grid">
+            <div class="stat-card"><div class="stat-value">428</div><div class="stat-label">Unique Profile Visitors</div></div>
+            <div class="stat-card"><div class="stat-value">512</div><div class="stat-label">Profile Views</div></div>
+            <div class="stat-card"><div class="stat-value">187</div><div class="stat-label">Service Views</div></div>
+            <div class="stat-card"><div class="stat-value">94</div><div class="stat-label">Offer Views</div></div>
+            <div class="stat-card"><div class="stat-value">36</div><div class="stat-label">Unique Booking Clickers</div></div>
+            <div class="stat-card"><div class="stat-value">44</div><div class="stat-label">Booking Clicks</div></div>
+          </div>
+          <p class="example-note">Illustrative example — This Month</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 8 — Pricing -->
+    <section class="slide" data-slide="8">
+      <div class="slide-inner">
+        <div class="slide-header" style="text-align: center; align-items: center;">
+          <span class="slide-label">Slide 8 — Simple Pricing</span>
+          <h2 class="headline" style="max-width: none;">One predictable C$39 monthly fee — no commission.</h2>
+        </div>
+        <div class="price-hero">
+          <div class="price-amount">C$39</div>
+          <div class="price-period">per salon location / month</div>
+          <div class="price-badges">
+            <span class="price-badge">No commission</span>
+            <span class="price-badge">No booking fee</span>
+            <span class="price-badge">No revenue share</span>
+          </div>
+          <ul class="bullets includes-list">
+            <li>Salon listing & search visibility</li>
+            <li>Services, photos, specialties, languages, offers</li>
+            <li>External booking links & click analytics</li>
+            <li>One fixed monthly subscription — low risk to try</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 9 — Why Join -->
+    <section class="slide" data-slide="9">
+      <div class="slide-inner">
+        <div class="slide-header">
+          <span class="slide-label">Slide 9 — Why Join</span>
+          <h2 class="headline">Turn your specialties into a new way for Toronto clients to find you.</h2>
+        </div>
+        <div class="benefit-grid">
+          <div class="benefit-card">
+            <div class="benefit-icon">🔍</div>
+            <p>Reach clients searching for <strong>your</strong> services, specialties, and languages</p>
+          </div>
+          <div class="benefit-card">
+            <div class="benefit-icon">✨</div>
+            <p>Stand out beyond Google and Instagram alone</p>
+          </div>
+          <div class="benefit-card">
+            <div class="benefit-icon">🔗</div>
+            <p>Send traffic to the booking page you already use</p>
+          </div>
+          <div class="benefit-card">
+            <div class="benefit-icon">💰</div>
+            <p>One predictable monthly fee — no commission on bookings</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 10 — CTA -->
+    <section class="slide slide-cta" data-slide="10">
+      <div class="slide-inner" style="align-items: center; text-align: center;">
+        <div class="brand-mark" style="color: var(--accent-warm);">Toronto Beauty</div>
+        <h2 class="headline">Put your salon in front of more Toronto beauty clients.</h2>
+        <ul class="bullets" style="max-width: 480px; margin: 1.5rem auto 0;">
+          <li>Another customer acquisition channel — not another booking system</li>
+          <li>Keep your current booking tool</li>
+          <li>No commission · No booking fee</li>
+        </ul>
+        <a class="cta-button" href="#">Join Toronto Beauty — C$39/month/location</a>
+        <div class="cta-steps">
+          <span class="cta-step">1. List your salon</span>
+          <span class="cta-step">2. Add services & booking link</span>
+          <span class="cta-step">3. Start getting discovered</span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <button class="notes-toggle" id="notesToggle" type="button" aria-pressed="false">Speaker notes</button>
+  <div class="speaker-notes" id="speakerNotes" aria-live="polite"></div>
+
+  <nav class="nav-bar" aria-label="Slide navigation">
+    <button class="nav-btn" id="prevBtn" type="button" disabled aria-label="Previous slide">← Previous</button>
+    <div class="progress-wrap">
+      <div class="progress-text"><span id="currentSlide">1</span> / <span id="totalSlides">10</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width: 10%;"></div></div>
+    </div>
+    <button class="nav-btn" id="nextBtn" type="button" aria-label="Next slide">Next →</button>
+  </nav>
+
+  <script>
+    const slides = document.querySelectorAll(".slide");
+    const total = slides.length;
+    let current = 0;
+
+    const speakerNotes = [
+      "Toronto Beauty is Toronto's beauty discovery marketplace. Today I want to talk about another customer acquisition channel — not another booking system. You keep your current booking workflow exactly as it is.",
+      "In Toronto, clients search for salons across Google, Instagram, Maps, booking apps, and more. Even great salons with strong specialties — Korean perm, curly hair, Cantonese-speaking stylists — can be hard to find when information is scattered.",
+      "Clients don't search by salon name alone. They search by service, specialty, language, location, price, and offers. Toronto needs beauty-specific discovery — that's the gap Toronto Beauty fills.",
+      "Toronto Beauty is like Hot Pepper Beauty for Toronto — but we are not a booking system. When clients click Book Now, they go to Fresha, Square, Booksy, GlossGenius, or your website. Your booking operations stay the same.",
+      "Your profile shows photos, services and prices, specialties, languages, and offers — everything clients compare before booking. One Book Now button sends them to your existing booking page.",
+      "This is the most important point: Toronto Beauty is not a replacement for your booking system. Fresha, Square, Booksy — all stay. No commission, no booking fee. Client relationships stay with you.",
+      "Your dashboard shows how many people viewed your profile and clicked through to your booking page. We track Booking Clicks, not completed bookings on our platform. The numbers shown are an illustrative example.",
+      "Pricing is simple: C$39 per location per month. Fixed subscription — listing, visibility, booking links, and analytics included. No commission, no booking fee, no revenue share.",
+      "In summary: reach clients searching for your specialties, keep your booking workflow, update your profile only when needed, and pay one predictable monthly fee. Great fit for independent and specialty salons.",
+      "Toronto Beauty is another way for clients to discover your salon — not another booking system. C$39 a month, no commission. Ready to get in front of more Toronto beauty clients?"
+    ];
+
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const currentEl = document.getElementById("currentSlide");
+    const totalEl = document.getElementById("totalSlides");
+    const progressFill = document.getElementById("progressFill");
+    const notesEl = document.getElementById("speakerNotes");
+    const notesToggle = document.getElementById("notesToggle");
+
+    totalEl.textContent = total;
+
+    function goTo(index) {
+      if (index < 0 || index >= total) return;
+      slides[current].classList.remove("active");
+      current = index;
+      slides[current].classList.add("active");
+      currentEl.textContent = current + 1;
+      progressFill.style.width = ((current + 1) / total * 100) + "%";
+      prevBtn.disabled = current === 0;
+      nextBtn.disabled = current === total - 1;
+      notesEl.innerHTML = "<strong>Speaker note</strong>" + speakerNotes[current];
+    }
+
+    prevBtn.addEventListener("click", () => goTo(current - 1));
+    nextBtn.addEventListener("click", () => goTo(current + 1));
+
+    notesToggle.addEventListener("click", () => {
+      const visible = notesEl.classList.toggle("visible");
+      notesToggle.setAttribute("aria-pressed", visible);
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); goTo(current + 1); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); goTo(current - 1); }
+      if (e.key === "Home") { e.preventDefault(); goTo(0); }
+      if (e.key === "End") { e.preventDefault(); goTo(total - 1); }
+    });
+
+    let touchStartX = 0;
+    document.addEventListener("touchstart", (e) => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
+    document.addEventListener("touchend", (e) => {
+      const diff = touchStartX - e.changedTouches[0].screenX;
+      if (Math.abs(diff) > 50) goTo(diff > 0 ? current + 1 : current - 1);
+    }, { passive: true });
+
+    goTo(0);
+  </script>
+</body>
+</html>
