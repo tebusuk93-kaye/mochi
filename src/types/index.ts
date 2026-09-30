@@ -7,6 +7,7 @@ export type AmountBasis = 'per_batch' | 'per_unit'
 
 export interface Settings {
   jpyToCad: number
+  defaultHourlyWageCAD: number
 }
 
 export interface Supply {
@@ -68,7 +69,11 @@ export interface ProductionEntry {
   productName: string
   quantity: number
   packagingType: PackagingType
-  laborCostCAD: number
+  hourlyWageCAD: number
+  laborHours: number
+  laborPeople: number
+  /** @deprecated legacy flat labor — migrated on load */
+  laborCostCAD?: number
   utilitiesCostCAD: number
   marketingCostCAD: number
   estimatedRetailPriceCAD: number

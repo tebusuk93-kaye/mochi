@@ -3,6 +3,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import {
   calculateProfitEstimate,
+  computeLaborCostCAD,
   formatCAD,
   generateId,
 } from '../lib/calculations'
@@ -22,7 +23,9 @@ export function ProductionPage() {
     importedProductId: '',
     quantity: '',
     packagingType: 'individual' as PackagingType,
-    laborCostCAD: '',
+    hourlyWageCAD: '',
+    laborHours: '',
+    laborPeople: '',
     utilitiesCostCAD: '',
     marketingCostCAD: '',
     estimatedRetailPriceCAD: '',
@@ -84,7 +87,9 @@ export function ProductionPage() {
       productName,
       quantity: parseFloat(form.quantity),
       packagingType: form.packagingType,
-      laborCostCAD: parseFloat(form.laborCostCAD) || 0,
+      hourlyWageCAD: parseFloat(form.hourlyWageCAD) || data.settings.defaultHourlyWageCAD,
+      laborHours: parseFloat(form.laborHours) || 0,
+      laborPeople: parseFloat(form.laborPeople) || 0,
       utilitiesCostCAD: parseFloat(form.utilitiesCostCAD) || 0,
       marketingCostCAD: parseFloat(form.marketingCostCAD) || 0,
       estimatedRetailPriceCAD: parseFloat(form.estimatedRetailPriceCAD),
@@ -99,7 +104,9 @@ export function ProductionPage() {
       importedProductId: '',
       quantity: '',
       packagingType: 'individual',
-      laborCostCAD: '',
+      hourlyWageCAD: String(data.settings.defaultHourlyWageCAD),
+      laborHours: '',
+      laborPeople: '',
       utilitiesCostCAD: '',
       marketingCostCAD: '',
       estimatedRetailPriceCAD: '',
@@ -128,6 +135,24 @@ export function ProductionPage() {
   const sorted = [...data.production].sort((a, b) => b.date.localeCompare(a.date))
   const isRecipeProduct = form.productCategory === 'mochi' || form.productCategory === 'onigiri'
 
+  const previewLabor = computeLaborCostCAD(
+    {
+      hourlyWageCAD: parseFloat(form.hourlyWageCAD) || data.settings.defaultHourlyWageCAD,
+      laborHours: parseFloat(form.laborHours) || 0,
+      laborPeople: parseFloat(form.laborPeople) || 0,
+    },
+    data.settings.defaultHourlyWageCAD,
+  )
+
+  const openForm = () => {
+    setShowForm(true)
+    setError('')
+    setForm((prev) => ({
+      ...prev,
+      hourlyWageCAD: prev.hourlyWageCAD || String(data.settings.defaultHourlyWageCAD),
+    }))
+  }
+
   return (
     <div>
       <PageHeader
@@ -135,7 +160,7 @@ export function ProductionPage() {
         subtitle="Enter how many you made & estimated retail price"
       />
 
-      <Button onClick={() => { setShowForm(!showForm); setError('') }} className="w-full mb-4 flex items-center justify-center gap-2">
+      <Button onClick={() => (showForm ? (setShowForm(false), setError('')) : openForm())} className="w-full mb-4 flex items-center justify-center gap-2">
         <Plus size={18} />
         Log Production
       </Button>
@@ -220,9 +245,49 @@ export function ProductionPage() {
             />
 
             <div className="border-t border-border pt-3">
-              <div className="text-sm font-medium text-ink-muted mb-2">Batch costs (total for this run)</div>
-              <Input label="Labor (CAD)" value={form.laborCostCAD} onChange={(v) => setForm({ ...form, laborCostCAD: v })} type="number" step="any" min="0" inputMode="decimal" placeholder="0" />
-              <div className="h-2" />
+              <div className="text-sm font-medium text-ink-muted mb-2">Labor (wages for this batch)</div>
+              <Input
+                label="Hourly wage (CAD)"
+                value={form.hourlyWageCAD}
+                onChange={(v) => setForm({ ...form, hourlyWageCAD: v })}
+                type="number"
+                step="any"
+                min="0"
+                inputMode="decimal"
+                hint={`Default from Settings: ${formatCAD(data.settings.defaultHourlyWageCAD)}/hr`}
+              />
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <Input
+                  label="Hours for batch"
+                  value={form.laborHours}
+                  onChange={(v) => setForm({ ...form, laborHours: v })}
+                  type="number"
+                  step="any"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder="e.g. 2"
+                />
+                <Input
+                  label="Number of people"
+                  value={form.laborPeople}
+                  onChange={(v) => setForm({ ...form, laborPeople: v })}
+                  type="number"
+                  step="1"
+                  min="0"
+                  inputMode="numeric"
+                  placeholder="e.g. 2"
+                />
+              </div>
+              {previewLabor > 0 && (
+                <div className="text-xs text-matcha-dark bg-matcha/10 rounded-xl px-3 py-2 mt-2">
+                  Labor cost: {formatCAD(previewLabor)}
+                  <span className="text-ink-muted">
+                    {' '}({formatCAD(parseFloat(form.hourlyWageCAD) || data.settings.defaultHourlyWageCAD)}/hr × {form.laborHours || 0}h × {form.laborPeople || 0} people)
+                  </span>
+                </div>
+              )}
+              <div className="h-3" />
+              <div className="text-sm font-medium text-ink-muted mb-2">Other batch costs</div>
               <Input label="Utilities (CAD)" value={form.utilitiesCostCAD} onChange={(v) => setForm({ ...form, utilitiesCostCAD: v })} type="number" step="any" min="0" inputMode="decimal" placeholder="0" />
               <div className="h-2" />
               <Input label="Marketing (CAD)" value={form.marketingCostCAD} onChange={(v) => setForm({ ...form, marketingCostCAD: v })} type="number" step="any" min="0" inputMode="decimal" placeholder="0" />
@@ -255,6 +320,14 @@ export function ProductionPage() {
                         <> · {entry.packagingType === 'individual' ? 'Individual' : 'Box of 4'}</>
                       )}
                     </div>
+                    {computeLaborCostCAD(entry, data.settings.defaultHourlyWageCAD) > 0 && (
+                      <div className="text-xs text-ink-muted">
+                        Labor: {formatCAD(computeLaborCostCAD(entry, data.settings.defaultHourlyWageCAD))}
+                        {entry.laborHours > 0 && entry.laborPeople > 0 && (
+                          <> · {entry.laborPeople} people × {entry.laborHours}h</>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <button onClick={() => handleDelete(entry.id)} className="text-sakura p-1">
                     <Trash2 size={16} />

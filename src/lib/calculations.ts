@@ -103,6 +103,18 @@ export function importedUnitCost(product: ImportedProduct, jpyToCad: number): nu
   return toCAD(product.unitCost, product.costCurrency, jpyToCad)
 }
 
+export function computeLaborCostCAD(
+  entry: Pick<ProductionEntry, 'hourlyWageCAD' | 'laborHours' | 'laborPeople' | 'laborCostCAD'>,
+  defaultHourlyWageCAD: number,
+): number {
+  const hasWageInput = entry.laborHours > 0 && entry.laborPeople > 0
+  if (hasWageInput) {
+    const wage = entry.hourlyWageCAD > 0 ? entry.hourlyWageCAD : defaultHourlyWageCAD
+    return wage * entry.laborHours * entry.laborPeople
+  }
+  return entry.laborCostCAD ?? 0
+}
+
 export function calculateProductionCosts(
   entry: ProductionEntry,
   data: AppData,
@@ -130,7 +142,7 @@ export function calculateProductionCosts(
     }
   }
 
-  const labor = entry.laborCostCAD / qty
+  const labor = computeLaborCostCAD(entry, settings.defaultHourlyWageCAD) / qty
   const utilities = entry.utilitiesCostCAD / qty
   const marketing = entry.marketingCostCAD / qty
   const depreciation = totalDepreciationPerUnit(fixedAssets, jpyToCad)

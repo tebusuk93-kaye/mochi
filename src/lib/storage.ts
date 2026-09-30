@@ -1,9 +1,9 @@
-import type { AmountBasis, AppData, Recipe, RecipeIngredient } from '../types'
+import type { AmountBasis, AppData, ProductionEntry, Recipe, RecipeIngredient } from '../types'
 
 const STORAGE_KEY = 'mochi-production-data'
 
 export const defaultData: AppData = {
-  settings: { jpyToCad: 0.0092 },
+  settings: { jpyToCad: 0.0092, defaultHourlyWageCAD: 18 },
   supplies: [],
   fixedAssets: [],
   recipes: [],
@@ -44,12 +44,51 @@ function migrateRecipe(recipe: LegacyRecipe): Recipe {
   }
 }
 
+type LegacyProductionEntry = ProductionEntry & {
+  laborCostCAD?: number
+  hourlyWageCAD?: number
+  laborHours?: number
+  laborPeople?: number
+}
+
+function migrateProductionEntry(entry: LegacyProductionEntry): ProductionEntry {
+  const hasWageFields =
+    (entry.laborHours ?? 0) > 0 ||
+    (entry.laborPeople ?? 0) > 0 ||
+    (entry.hourlyWageCAD ?? 0) > 0
+
+  if (hasWageFields) {
+    return {
+      ...entry,
+      hourlyWageCAD: entry.hourlyWageCAD ?? 0,
+      laborHours: entry.laborHours ?? 0,
+      laborPeople: entry.laborPeople ?? 0,
+    }
+  }
+
+  return {
+    ...entry,
+    hourlyWageCAD: entry.hourlyWageCAD ?? 0,
+    laborHours: 0,
+    laborPeople: 0,
+    laborCostCAD: entry.laborCostCAD ?? 0,
+  }
+}
+
 function migrateData(parsed: Partial<AppData>): AppData {
+  const settings = {
+    ...defaultData.settings,
+    ...parsed.settings,
+    defaultHourlyWageCAD: parsed.settings?.defaultHourlyWageCAD ?? defaultData.settings.defaultHourlyWageCAD,
+  }
+
   return {
     ...defaultData,
     ...parsed,
+    settings,
     recipes: (parsed.recipes ?? []).map((r) => migrateRecipe(r as LegacyRecipe)),
     importedProducts: (parsed.importedProducts ?? []).filter((p) => p.productType === 'rice_cracker'),
+    production: (parsed.production ?? []).map((e) => migrateProductionEntry(e as LegacyProductionEntry)),
   }
 }
 
