@@ -75,7 +75,7 @@ function migrateProductionEntry(entry: LegacyProductionEntry): ProductionEntry {
   }
 }
 
-function migrateData(parsed: Partial<AppData>): AppData {
+export function migrateData(parsed: Partial<AppData>): AppData {
   const settings = {
     ...defaultData.settings,
     ...parsed.settings,

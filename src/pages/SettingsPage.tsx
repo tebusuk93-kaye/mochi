@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { formatCAD } from '../lib/calculations'
+import { BackupPanel } from '../components/BackupPanel'
 import { Button, Card, Input, PageHeader, Select } from '../components/ui'
 
 type RateInputMode = 'jpy_to_cad' | 'cad_to_jpy'
@@ -127,6 +128,8 @@ export function SettingsPage() {
       <Button onClick={handleSave} className="w-full mb-4">
         Save Settings
       </Button>
+
+      <BackupPanel />
 
       <Card className="mb-4">
         <h2 className="font-medium mb-2">How it works</h2>

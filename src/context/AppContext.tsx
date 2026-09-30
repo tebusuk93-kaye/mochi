@@ -6,6 +6,7 @@ interface AppContextValue {
   data: AppData
   hydrated: boolean
   updateData: (updater: (prev: AppData) => AppData) => void
+  replaceData: (data: AppData) => void
   resetData: () => void
 }
 
@@ -28,10 +29,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setData((prev) => updater(prev))
   }
 
+  const replaceData = (next: AppData) => setData(next)
+
   const resetData = () => setData({ ...defaultData })
 
   return (
-    <AppContext.Provider value={{ data, updateData, resetData, hydrated }}>
+    <AppContext.Provider value={{ data, updateData, replaceData, resetData, hydrated }}>
       {children}
     </AppContext.Provider>
   )
