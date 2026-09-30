@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Pencil } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { generateId, supplyUnitCost, formatCurrency, formatCAD, formatUnit } from '../lib/calculations'
 import type { Supply, SupplyCategory, Unit, Currency } from '../types'
@@ -23,21 +23,53 @@ const currencyOptions: { value: Currency; label: string }[] = [
   { value: 'JPY', label: 'JPY' },
 ]
 
+const emptyForm = {
+  name: '',
+  category: 'ingredient' as SupplyCategory,
+  unit: 'g' as Unit,
+  packageSize: '',
+  packageCost: '',
+  currency: 'CAD' as Currency,
+  notes: '',
+}
+
 export function SuppliesPage() {
   const { data, updateData } = useApp()
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({
-    name: '',
-    category: 'ingredient' as SupplyCategory,
-    unit: 'g' as Unit,
-    packageSize: '',
-    packageCost: '',
-    currency: 'CAD' as Currency,
-    notes: '',
-  })
+  const [form, setForm] = useState(emptyForm)
 
-  const handleAdd = (e: React.FormEvent) => {
+  const closeForm = () => {
+    setShowForm(false)
+    setEditingId(null)
+    setForm(emptyForm)
+    setError('')
+  }
+
+  const startAdd = () => {
+    setEditingId(null)
+    setForm(emptyForm)
+    setError('')
+    setShowForm(true)
+  }
+
+  const startEdit = (supply: Supply) => {
+    setEditingId(supply.id)
+    setForm({
+      name: supply.name,
+      category: supply.category,
+      unit: supply.unit,
+      packageSize: String(supply.packageSize),
+      packageCost: String(supply.packageCost),
+      currency: supply.currency,
+      notes: supply.notes ?? '',
+    })
+    setError('')
+    setShowForm(true)
+  }
+
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
@@ -57,7 +89,7 @@ export function SuppliesPage() {
     }
 
     const supply: Supply = {
-      id: generateId(),
+      id: editingId ?? generateId(),
       name: form.name.trim(),
       category: form.category,
       unit: form.unit,
@@ -67,9 +99,13 @@ export function SuppliesPage() {
       notes: form.notes || undefined,
     }
 
-    updateData((prev) => ({ ...prev, supplies: [...prev.supplies, supply] }))
-    setForm({ name: '', category: 'ingredient', unit: 'g', packageSize: '', packageCost: '', currency: 'CAD', notes: '' })
-    setShowForm(false)
+    updateData((prev) => ({
+      ...prev,
+      supplies: editingId
+        ? prev.supplies.map((s) => (s.id === editingId ? supply : s))
+        : [...prev.supplies, supply],
+    }))
+    closeForm()
   }
 
   const handleDelete = (id: string) => {
@@ -77,6 +113,7 @@ export function SuppliesPage() {
       ...prev,
       supplies: prev.supplies.filter((s) => s.id !== id),
     }))
+    if (editingId === id) closeForm()
   }
 
   const grouped = {
@@ -91,14 +128,15 @@ export function SuppliesPage() {
         subtitle="Ingredients & packaging — enter package size and cost"
       />
 
-      <Button onClick={() => { setShowForm(!showForm); setError('') }} className="w-full mb-4 flex items-center justify-center gap-2">
+      <Button onClick={() => (showForm ? closeForm() : startAdd())} className="w-full mb-4 flex items-center justify-center gap-2">
         <Plus size={18} />
         Add Supply
       </Button>
 
       {showForm && (
         <Card className="mb-4">
-          <form onSubmit={handleAdd} className="space-y-3">
+          <form onSubmit={handleSave} className="space-y-3">
+            <div className="text-sm font-medium text-ink">{editingId ? 'Edit supply' : 'New supply'}</div>
             {error && <FormError message={error} />}
             <Input label="Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="e.g. Peach, Glutinous rice flour" />
             <Select label="Category" value={form.category} onChange={(v) => setForm({ ...form, category: v as SupplyCategory })} options={categoryOptions} />
@@ -122,15 +160,15 @@ export function SuppliesPage() {
             </div>
             <Input label="Notes (optional)" value={form.notes} onChange={(v) => setForm({ ...form, notes: v })} />
             <div className="flex gap-2">
-              <Button type="submit" className="flex-1">Save</Button>
-              <Button type="button" variant="ghost" onClick={() => { setShowForm(false); setError('') }}>Cancel</Button>
+              <Button type="submit" className="flex-1">{editingId ? 'Update' : 'Save'}</Button>
+              <Button type="button" variant="ghost" onClick={closeForm}>Cancel</Button>
             </div>
           </form>
         </Card>
       )}
 
-      <SupplyGroup title="Ingredients" items={grouped.ingredient} jpyToCad={data.settings.jpyToCad} onDelete={handleDelete} />
-      <SupplyGroup title="Packaging" items={grouped.packaging} jpyToCad={data.settings.jpyToCad} onDelete={handleDelete} />
+      <SupplyGroup title="Ingredients" items={grouped.ingredient} jpyToCad={data.settings.jpyToCad} onEdit={startEdit} onDelete={handleDelete} />
+      <SupplyGroup title="Packaging" items={grouped.packaging} jpyToCad={data.settings.jpyToCad} onEdit={startEdit} onDelete={handleDelete} />
 
       {data.supplies.length === 0 && !showForm && (
         <EmptyState message="Add your first supply. Example: 6 peaches (個) for $5, or 500g flour for ¥450." />
@@ -143,11 +181,13 @@ function SupplyGroup({
   title,
   items,
   jpyToCad,
+  onEdit,
   onDelete,
 }: {
   title: string
   items: Supply[]
   jpyToCad: number
+  onEdit: (supply: Supply) => void
   onDelete: (id: string) => void
 }) {
   if (items.length === 0) return null
@@ -171,9 +211,14 @@ function SupplyGroup({
                     {formatCAD(unitCostCAD)}/{unit}
                   </div>
                 </div>
-                <button onClick={() => onDelete(s.id)} className="text-sakura p-1">
-                  <Trash2 size={16} />
-                </button>
+                <div className="flex gap-1">
+                  <button onClick={() => onEdit(s)} className="text-ink-muted p-1" aria-label="Edit">
+                    <Pencil size={16} />
+                  </button>
+                  <button onClick={() => onDelete(s.id)} className="text-sakura p-1" aria-label="Delete">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             </Card>
           )

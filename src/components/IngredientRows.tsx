@@ -128,6 +128,15 @@ export function IngredientRows({
   )
 }
 
+export function toFormRows(ingredients: { supplyId: string; amount: number; amountBasis: AmountBasis }[]): IngredientFormRow[] {
+  if (ingredients.length === 0) return []
+  return ingredients.map((i) => ({
+    supplyId: i.supplyId,
+    amount: String(i.amount),
+    amountBasis: i.amountBasis,
+  }))
+}
+
 export function parseIngredientRows(
   rows: IngredientFormRow[],
 ): { supplyId: string; amount: number; amountBasis: AmountBasis }[] {

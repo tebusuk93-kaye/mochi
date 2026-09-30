@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Pencil } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import {
   formatCAD,
@@ -8,12 +8,13 @@ import {
   importedUnitCost,
   recipeIngredientCostPerUnit,
 } from '../lib/calculations'
-import type { Recipe, Currency } from '../types'
+import type { Recipe, Currency, ImportedProduct } from '../types'
 import { Button, Card, Input, PageHeader, Select, EmptyState, FormError } from '../components/ui'
 import {
   IngredientRows,
   emptyIngredientRow,
   parseIngredientRows,
+  toFormRows,
   type IngredientFormRow,
 } from '../components/IngredientRows'
 
@@ -75,6 +76,43 @@ export function RecipesPage() {
   )
 }
 
+type RecipeFormState = {
+  name: string
+  batchYield: string
+  baseIngredients: IngredientFormRow[]
+  fillingIngredients: IngredientFormRow[]
+  individualPackagingId: string
+  boxPackagingId: string
+  innerPackagingId: string
+  notes: string
+}
+
+const emptyRecipeForm = (): RecipeFormState => ({
+  name: '',
+  batchYield: '',
+  baseIngredients: [emptyIngredientRow()],
+  fillingIngredients: [],
+  individualPackagingId: '',
+  boxPackagingId: '',
+  innerPackagingId: '',
+  notes: '',
+})
+
+function recipeToForm(recipe: Recipe): RecipeFormState {
+  return {
+    name: recipe.name,
+    batchYield: String(recipe.batchYield),
+    baseIngredients: toFormRows(recipe.baseIngredients).length > 0
+      ? toFormRows(recipe.baseIngredients)
+      : [emptyIngredientRow()],
+    fillingIngredients: toFormRows(recipe.fillingIngredients),
+    individualPackagingId: recipe.individualPackagingId ?? '',
+    boxPackagingId: recipe.boxPackagingId ?? '',
+    innerPackagingId: recipe.innerPackagingId ?? '',
+    notes: recipe.notes ?? '',
+  }
+}
+
 function RecipeTab({
   productType,
   showForm,
@@ -95,33 +133,32 @@ function RecipeTab({
   const recipes = data.recipes.filter((r) => r.productType === productType)
 
   const unitLabel = productType === 'mochi' ? 'mochi' : 'onigiri'
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({
-    name: '',
-    batchYield: '',
-    baseIngredients: [emptyIngredientRow()] as IngredientFormRow[],
-    fillingIngredients: [] as IngredientFormRow[],
-    individualPackagingId: '',
-    boxPackagingId: '',
-    innerPackagingId: '',
-    notes: '',
-  })
+  const [form, setForm] = useState<RecipeFormState>(emptyRecipeForm())
 
-  const resetForm = () => {
-    setForm({
-      name: '',
-      batchYield: '',
-      baseIngredients: [emptyIngredientRow()],
-      fillingIngredients: [],
-      individualPackagingId: '',
-      boxPackagingId: '',
-      innerPackagingId: '',
-      notes: '',
-    })
+  const closeForm = () => {
+    setShowForm(false)
+    setEditingId(null)
+    setForm(emptyRecipeForm())
     setError('')
   }
 
-  const handleAdd = (e: React.FormEvent) => {
+  const startAdd = () => {
+    setEditingId(null)
+    setForm(emptyRecipeForm())
+    setError('')
+    setShowForm(true)
+  }
+
+  const startEdit = (recipe: Recipe) => {
+    setEditingId(recipe.id)
+    setForm(recipeToForm(recipe))
+    setError('')
+    setShowForm(true)
+  }
+
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
@@ -144,7 +181,7 @@ function RecipeTab({
     }
 
     const recipe: Recipe = {
-      id: generateId(),
+      id: editingId ?? generateId(),
       name: form.name.trim(),
       productType,
       batchYield,
@@ -156,13 +193,18 @@ function RecipeTab({
       notes: form.notes || undefined,
     }
 
-    updateData((prev) => ({ ...prev, recipes: [...prev.recipes, recipe] }))
-    resetForm()
-    setShowForm(false)
+    updateData((prev) => ({
+      ...prev,
+      recipes: editingId
+        ? prev.recipes.map((r) => (r.id === editingId ? recipe : r))
+        : [...prev.recipes, recipe],
+    }))
+    closeForm()
   }
 
   const handleDelete = (id: string) => {
     updateData((prev) => ({ ...prev, recipes: prev.recipes.filter((r) => r.id !== id) }))
+    if (editingId === id) closeForm()
   }
 
   const pkgIndividualOpts = [{ value: '', label: 'None' }, ...individualPkgs.map((s) => ({ value: s.id, label: s.name }))]
@@ -171,14 +213,15 @@ function RecipeTab({
 
   return (
     <>
-      <Button onClick={() => { setShowForm(!showForm); setError('') }} className="w-full mb-4 flex items-center justify-center gap-2">
+      <Button onClick={() => (showForm ? closeForm() : startAdd())} className="w-full mb-4 flex items-center justify-center gap-2">
         <Plus size={18} />
         Add {productType === 'mochi' ? 'Mochi' : 'Onigiri'} Recipe
       </Button>
 
       {showForm && (
         <Card className="mb-4">
-          <form onSubmit={handleAdd} className="space-y-4">
+          <form onSubmit={handleSave} className="space-y-4">
+            <div className="text-sm font-medium text-ink">{editingId ? 'Edit recipe' : 'New recipe'}</div>
             {error && <FormError message={error} />}
             <Input
               label="Recipe name"
@@ -226,9 +269,11 @@ function RecipeTab({
               <Select label="Inner wrapper (×4 per box)" value={form.innerPackagingId} onChange={(v) => setForm({ ...form, innerPackagingId: v })} options={pkgInnerOpts} />
             </div>
 
+            <Input label="Notes (optional)" value={form.notes} onChange={(v) => setForm({ ...form, notes: v })} />
+
             <div className="flex gap-2">
-              <Button type="submit" className="flex-1">Save Recipe</Button>
-              <Button type="button" variant="ghost" onClick={() => { setShowForm(false); resetForm() }}>Cancel</Button>
+              <Button type="submit" className="flex-1">{editingId ? 'Update' : 'Save Recipe'}</Button>
+              <Button type="button" variant="ghost" onClick={closeForm}>Cancel</Button>
             </div>
           </form>
         </Card>
@@ -252,9 +297,14 @@ function RecipeTab({
                       Ingredient cost: {formatCAD(costPerUnit)}/{unitLabel}
                     </div>
                   </div>
-                  <button onClick={() => handleDelete(r.id)} className="text-sakura p-1">
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex gap-1">
+                    <button onClick={() => startEdit(r)} className="text-ink-muted p-1" aria-label="Edit">
+                      <Pencil size={16} />
+                    </button>
+                    <button onClick={() => handleDelete(r.id)} className="text-sakura p-1" aria-label="Delete">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </Card>
             )
@@ -276,6 +326,7 @@ function ImportedTab({
   data: ReturnType<typeof useApp>['data']
   updateData: ReturnType<typeof useApp>['updateData']
 }) {
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: '',
@@ -285,7 +336,34 @@ function ImportedTab({
     notes: '',
   })
 
-  const handleAdd = (e: React.FormEvent) => {
+  const closeForm = () => {
+    setShowForm(false)
+    setEditingId(null)
+    setForm({ name: '', unitCost: '', costCurrency: 'JPY', estimatedRetailPriceCAD: '', notes: '' })
+    setError('')
+  }
+
+  const startAdd = () => {
+    setEditingId(null)
+    setForm({ name: '', unitCost: '', costCurrency: 'JPY', estimatedRetailPriceCAD: '', notes: '' })
+    setError('')
+    setShowForm(true)
+  }
+
+  const startEdit = (product: ImportedProduct) => {
+    setEditingId(product.id)
+    setForm({
+      name: product.name,
+      unitCost: String(product.unitCost),
+      costCurrency: product.costCurrency,
+      estimatedRetailPriceCAD: String(product.estimatedRetailPriceCAD),
+      notes: product.notes ?? '',
+    })
+    setError('')
+    setShowForm(true)
+  }
+
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
@@ -304,19 +382,23 @@ function ImportedTab({
       return
     }
 
-    const product = {
-      id: generateId(),
+    const product: ImportedProduct = {
+      id: editingId ?? generateId(),
       name: form.name.trim(),
-      productType: 'rice_cracker' as const,
+      productType: 'rice_cracker',
       unitCost,
       costCurrency: form.costCurrency,
       estimatedRetailPriceCAD: retail,
       notes: form.notes || undefined,
     }
 
-    updateData((prev) => ({ ...prev, importedProducts: [...prev.importedProducts, product] }))
-    setForm({ name: '', unitCost: '', costCurrency: 'JPY', estimatedRetailPriceCAD: '', notes: '' })
-    setShowForm(false)
+    updateData((prev) => ({
+      ...prev,
+      importedProducts: editingId
+        ? prev.importedProducts.map((p) => (p.id === editingId ? product : p))
+        : [...prev.importedProducts, product],
+    }))
+    closeForm()
   }
 
   const handleDelete = (id: string) => {
@@ -324,18 +406,20 @@ function ImportedTab({
       ...prev,
       importedProducts: prev.importedProducts.filter((p) => p.id !== id),
     }))
+    if (editingId === id) closeForm()
   }
 
   return (
     <>
-      <Button onClick={() => { setShowForm(!showForm); setError('') }} className="w-full mb-4 flex items-center justify-center gap-2">
+      <Button onClick={() => (showForm ? closeForm() : startAdd())} className="w-full mb-4 flex items-center justify-center gap-2">
         <Plus size={18} />
         Add Rice Cracker
       </Button>
 
       {showForm && (
         <Card className="mb-4">
-          <form onSubmit={handleAdd} className="space-y-3">
+          <form onSubmit={handleSave} className="space-y-3">
+            <div className="text-sm font-medium text-ink">{editingId ? 'Edit product' : 'New product'}</div>
             {error && <FormError message={error} />}
             <Input label="Product name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="e.g. Senbei assortment" />
             <div className="grid grid-cols-2 gap-2">
@@ -360,8 +444,8 @@ function ImportedTab({
               inputMode="decimal"
             />
             <div className="flex gap-2">
-              <Button type="submit" className="flex-1">Save</Button>
-              <Button type="button" variant="ghost" onClick={() => { setShowForm(false); setError('') }}>Cancel</Button>
+              <Button type="submit" className="flex-1">{editingId ? 'Update' : 'Save'}</Button>
+              <Button type="button" variant="ghost" onClick={closeForm}>Cancel</Button>
             </div>
           </form>
         </Card>
@@ -386,9 +470,14 @@ function ImportedTab({
                       Retail {formatCAD(p.estimatedRetailPriceCAD)} · Margin {formatCAD(margin)}
                     </div>
                   </div>
-                  <button onClick={() => handleDelete(p.id)} className="text-sakura p-1">
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex gap-1">
+                    <button onClick={() => startEdit(p)} className="text-ink-muted p-1" aria-label="Edit">
+                      <Pencil size={16} />
+                    </button>
+                    <button onClick={() => handleDelete(p.id)} className="text-sakura p-1" aria-label="Delete">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </Card>
             )
